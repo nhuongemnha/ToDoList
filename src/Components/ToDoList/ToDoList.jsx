@@ -20,9 +20,13 @@ import { actionType } from "../../store/actions/types";
 import { arrTheme } from "../../Themes/ThemeManager";
 
 class ToDoList extends Component {
-  state = {
-    taskName: "",
-  };
+  constructor(props) {
+    super(props);
+    this.state = {
+      taskName: "",
+      disabled: true,
+    };
+  }
 
   renderTaskToDo = () => {
     return this.props.taskList
@@ -32,9 +36,43 @@ class ToDoList extends Component {
           <Tr key={index}>
             <Th>{task.taskName}</Th>
             <Th className="text-right">
-              <Button className="ml-1">Sửa</Button>
-              <Button className="ml-1">Thêm</Button>
-              <Button className="ml-1">Xóa</Button>
+              <Button
+                onClick={() => {
+                  this.setState(
+                    {
+                      disabled: false,
+                    },
+                    () => {
+                      this.props.dispatch(
+                        createAction(actionType.edit_task, task)
+                      );
+                    }
+                  );
+                }}
+                className="ml-1"
+              >
+                Fix
+              </Button>
+              <Button
+                onClick={() => {
+                  this.props.dispatch(
+                    createAction(actionType.done_task, task.id)
+                  );
+                }}
+                className="ml-1"
+              >
+                Done
+              </Button>
+              <Button
+                onClick={() => {
+                  this.props.dispatch(
+                    createAction(actionType.delete_task, task.id)
+                  );
+                }}
+                className="ml-1"
+              >
+                Delete
+              </Button>
             </Th>
           </Tr>
         );
@@ -49,7 +87,16 @@ class ToDoList extends Component {
           <Tr key={index}>
             <Th>{task.taskName}</Th>
             <Th className="text-right">
-              <Button className="ml-1">Xóa</Button>
+              <Button
+                onClick={() => {
+                  this.props.dispatch(
+                    createAction(actionType.delete_task, task.id)
+                  );
+                }}
+                className="ml-1"
+              >
+                Delete
+              </Button>
             </Th>
           </Tr>
         );
@@ -65,6 +112,24 @@ class ToDoList extends Component {
       );
     });
   };
+
+  // lifecycle bảng 16 nhận vào props mới đc thực thi trước renderF
+  // componentWillReceiveProps(newProps) {
+  //   this.setState({
+  //     taskName: newProps.taskEdit.taskName,
+  //   });
+  // }
+
+  // static getDerivedStateFromProps(newProps, currentState) {
+  //   // newProps: là props mới, props cũ là this.props (ko truy xuất đc)
+  //   // currentState: ững với state hiện tại this.state
+  //   // hoặc trả về state mới (this.state)
+  //   let newState = { ...currentState, taskName: newProps.taskEdit.taskName };
+  //   return newState;
+  //   // trả về null state giữ nguyên
+  //   // return null
+
+  // }
 
   render() {
     return (
@@ -83,6 +148,7 @@ class ToDoList extends Component {
             </Dropdown>
             <Heading3>To do list</Heading3>
             <TextField
+              value={this.state.taskName}
               onChange={(e) => {
                 this.setState(
                   {
@@ -115,7 +181,40 @@ class ToDoList extends Component {
             >
               <span>&#43;</span> Add Task
             </Button>
-            <Button className="ml-2 ">Update Task</Button>
+            {this.state.disabled === true ? (
+              <Button
+                disabled
+                onClick={() =>
+                  this.props.dispatch(
+                    createAction(actionType.update_task, this.state.taskName)
+                  )
+                }
+                className="ml-2 "
+              >
+                Update Task
+              </Button>
+            ) : (
+              <Button
+                onClick={() => {
+                  let { taskName } = this.state;
+                  this.setState(
+                    {
+                      disabled: true,
+                      taskName: "",
+                    },
+                    () => {
+                      this.props.dispatch(
+                        createAction(actionType.update_task, taskName)
+                      );
+                    }
+                  );
+                }}
+                className="ml-2 "
+              >
+                Update Task
+              </Button>
+            )}
+
             <hr />
             <Heading3>Task To Do</Heading3>
             <Table>
@@ -130,12 +229,23 @@ class ToDoList extends Component {
       </div>
     );
   }
+  // Đây là lifecycle trả về props cũ và state cũ của component trước khi render (lifecycle này chạy sau render)
+  componentDidUpdate(prevProps, prevState) {
+    // So sánh nếu như props trước đó ( taskEdit trước mà khác taskEdit hiện tại thì mình mới setState)
+    if (prevProps.taskEdit.id !== this.props.taskEdit.id) {
+      console.log(prevProps.taskEdit.id != this.props.taskEdit.id);
+      this.setState({
+        taskName: this.props.taskEdit.taskName,
+      });
+    }
+  }
 }
 
 const mapStateToProps = (state) => {
   return {
     themeToDoList: state.ToDoListReducer.themeToDoList,
     taskList: state.ToDoListReducer.taskList,
+    taskEdit: state.ToDoListReducer.taskEdit,
   };
 };
 
